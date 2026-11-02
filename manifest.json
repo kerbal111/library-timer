@@ -1,0 +1,33 @@
+{
+  "name": "图书馆在馆计时",
+  "short_name": "在馆计时",
+  "description": "记录图书馆在馆时间，查看每日、每周、每月统计",
+  "lang": "zh-CN",
+  "id": "./mobile_app.html",
+  "start_url": "./mobile_app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6fb",
+  "theme_color": "#2f6fed",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f6fed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="在馆计时">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>图书馆在馆计时</title>
+<style>
+    :root {
+        --bg: #f3f6fb;
+        --card: #ffffff;
+        --border: #e3e9f2;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --green: #2e9e6b;
+        --green-dark: #27865b;
+        --red: #d9534f;
+        --red-dark: #b8433f;
+        --blue: #2f6fed;
+        --disabled: #c7d0dd;
+        --yellow: #fff7e0;
+    }
+
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                     "Microsoft YaHei", "PingFang SC", sans-serif;
+        font-size: 15px;
+    }
+
+    button, input {
+        font-family: inherit;
+    }
+
+    .app {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 14px 12px calc(24px + env(safe-area-inset-bottom));
+    }
+
+    header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 0 4px 8px;
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 23px;
+        line-height: 1.2;
+    }
+
+    .date {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 10px;
+    }
+
+    .timer-status {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .timer-detail {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 4px;
+        min-height: 18px;
+    }
+
+    .timer-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .btn {
+        border: 0;
+        border-radius: 10px;
+        padding: 13px 10px;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn:disabled {
+        background: var(--disabled);
+        cursor: default;
+    }
+
+    .green { background: var(--green); }
+    .red { background: var(--red); }
+    .blue { background: var(--blue); }
+    .gray {
+        background: #e6ecf5;
+        color: var(--text);
+    }
+
+    .summary-card {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .label {
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .big {
+        color: var(--blue);
+        font-size: 27px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-top: 2px;
+    }
+
+    .count {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+        padding-bottom: 4px;
+    }
+
+    .tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin: 12px 0 10px;
+    }
+
+    .tab {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #e9eff8;
+        color: var(--muted);
+        padding: 10px 4px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .tab.active {
+        background: var(--card);
+        color: var(--blue);
+        border-color: #c9d9f7;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 0 4px 8px;
+    }
+
+    .section-head .title {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .section-head .info {
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .small-btn {
+        border: 0;
+        border-radius: 8px;
+        padding: 7px 12px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .record {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    .record.unknown {
+        background: var(--yellow);
+        border-color: #efd9a8;
+    }
+
+    .record .time {
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .record .duration {
+        color: var(--blue);
+        font-size: 13px;
+        font-weight: 700;
+        margin-top: 3px;
+    }
+
+    .record.unknown .duration {
+        color: #a16a12;
+    }
+
+    .record-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 3px;
+        flex: 0 0 auto;
+    }
+
+    .link-btn {
+        border: 0;
+        background: none;
+        color: var(--blue);
+        font-size: 12px;
+        padding: 2px 3px;
+        cursor: pointer;
+    }
+
+    .link-btn.danger {
+        color: var(--red);
+    }
+
+    .empty {
+        color: var(--muted);
+        text-align: center;
+        padding: 20px 8px;
+        font-size: 13px;
+        background: var(--card);
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+    }
+
+    .week-summary {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 8px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .week-summary .value {
+        font-size: 16px;
+        font-weight: 700;
+        margin-top: 3px;
+        line-height: 1.25;
+    }
+
+    .week-summary .value.small {
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .group-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin: 14px 4px 8px;
+    }
+
+    .day-list {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 4px 12px;
+        margin-bottom: 4px;
+    }
+
+    .day-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 9px 0;
+        border-bottom: 1px solid #f1f4f9;
+        font-size: 14px;
+    }
+
+    .day-row:last-child {
+        border-bottom: 0;
+    }
+
+    .day-row.today {
+        color: var(--blue);
+        font-weight: 700;
+    }
+
+    .muted {
+        color: var(--muted);
+        font-weight: 400;
+    }
+
+    .warning {
+        background: #fff4d6;
+        border: 1px solid #efd9a8;
+        color: #7a4d00;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(17, 24, 39, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        z-index: 10;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 420px;
+        background: var(--card);
+        border-radius: 14px;
+        padding: 18px;
+    }
+
+    .modal-box h2 {
+        margin: 0 0 14px;
+        font-size: 18px;
+    }
+
+    .field {
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .field span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .field input {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: #f8fafd;
+        color: var(--text);
+        padding: 11px 10px;
+        font-size: 16px;
+        outline: none;
+    }
+
+    .field input:focus {
+        border-color: var(--blue);
+    }
+
+    .hint {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+        margin: 2px 0 14px;
+    }
+
+    .modal-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    /* PWA 与历史统计 */
+    .tabs {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .week-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .week-summary > div:first-child {
+        grid-column: auto;
+    }
+
+    .week-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .nav-btn {
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--blue);
+        border-radius: 9px;
+        padding: 8px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .nav-btn:disabled {
+        color: #aab3c2;
+        background: #eef2f8;
+        cursor: default;
+    }
+
+    .week-range {
+        flex: 1;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .note {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+        margin: 2px 4px 4px;
+    }
+
+    .month-head,
+    .month-row {
+        display: grid;
+        grid-template-columns: 64px 1fr 1fr;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+    }
+
+    .month-head {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        padding-top: 0;
+    }
+
+    .month-list {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .month-row {
+        border-top: 1px solid #f1f4f9;
+        font-size: 13px;
+    }
+
+    .month-row .month-name {
+        font-weight: 700;
+    }
+
+    .month-row .month-avg {
+        color: var(--blue);
+        font-weight: 700;
+    }
+
+    .month-row.current {
+        background: #eef4ff;
+    }
+
+    .month-row.future {
+        color: #b3bac6;
+    }
+
+    .month-row.future .month-avg {
+        color: #b3bac6;
+    }
+
+    .install-btn {
+        position: fixed;
+        right: 14px;
+        bottom: calc(14px + env(safe-area-inset-bottom));
+        z-index: 20;
+        border: 0;
+        border-radius: 999px;
+        background: var(--blue);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 10px 16px;
+        box-shadow: 0 6px 18px rgba(47, 111, 237, 0.28);
+        cursor: pointer;
+    }
+
+    @media (max-width: 420px) {
+        h1 { font-size: 20px; }
+        .timer-status { font-size: 26px; }
+        .big { font-size: 24px; }
+        .week-summary { grid-template-columns: 1fr 1fr; }
+        .week-summary > div:first-child { grid-column: auto; }
+        .tabs { grid-template-columns: repeat(4, 1fr); }
+    }
+</style>
+</head>
+<body>
+<div class="app">
+    <header>
+        <h1>图书馆在馆计时</h1>
+        <div class="date" id="header-date"></div>
+    </header>
+
+    <div id="storage-warning" class="warning hidden">
+        浏览器禁止了本地存储，本次记录可能无法保存。请用 Chrome 打开，并允许本地存储。
+    </div>
+
+    <section class="card">
+        <div class="timer-status" id="timer-status">未开始</div>
+        <div class="timer-detail" id="timer-detail">点击开始，记录入场时间</div>
+        <div class="timer-actions">
+            <button class="btn green" id="start-btn">开始计时</button>
+            <button class="btn red" id="stop-btn" disabled>结束计时</button>
+        </div>
+    </section>
+
+    <section class="card summary-card">
+        <div>
+            <div class="label">今日累计在馆</div>
+            <div class="big" id="today-total">0分钟</div>
+        </div>
+        <div class="count" id="today-count">今日记录 0 次</div>
+    </section>
+
+    <nav class="tabs">
+        <button class="tab active" data-tab="today">今日</button>
+        <button class="tab" data-tab="week">周</button>
+        <button class="tab" data-tab="month">月</button>
+        <button class="tab" data-tab="all">全部</button>
+    </nav>
+
+    <section id="panel-today" class="panel">
+        <div class="section-head">
+            <div class="info" id="today-info">今天还没有记录</div>
+            <button class="small-btn blue" id="add-today">手动添加</button>
+        </div>
+        <div id="today-list"></div>
+    </section>
+
+    <section id="panel-week" class="panel hidden">
+        <div class="week-nav">
+            <button class="nav-btn" id="week-prev">‹ 上一周</button>
+            <div class="week-range" id="week-range">—</div>
+            <button class="nav-btn" id="week-next">下一周 ›</button>
+        </div>
+
+        <div class="week-summary">
+            <div>
+                <div class="label">周总时长</div>
+                <div class="value" id="week-total">0分钟</div>
+            </div>
+            <div>
+                <div class="label">平均每日</div>
+                <div class="value" id="week-avg">0分钟</div>
+            </div>
+        </div>
+        <div class="note" id="week-note"></div>
+
+        <div class="group-title">每天在馆时长（周一至周日）</div>
+        <div class="day-list" id="week-days"></div>
+
+        <div class="group-title" id="week-records-title">本周全部记录</div>
+        <div id="week-records"></div>
+    </section>
+
+    <section id="panel-month" class="panel hidden">
+        <div class="week-nav">
+            <button class="nav-btn" id="year-prev">‹ 上一年</button>
+            <div class="week-range" id="year-label">—</div>
+            <button class="nav-btn" id="year-next">下一年 ›</button>
+        </div>
+
+        <div class="month-head">
+            <span>月份</span>
+            <span>月总时长</span>
+            <span>月平均</span>
+        </div>
+        <div class="month-list" id="month-list"></div>
+        <div class="note">月平均：过去月份 ÷ 当月天数；本月 ÷ 已过天数。未结束记录不计入总时长。</div>
+    </section>
+
+    <section id="panel-all" class="panel hidden">
+        <div class="section-head">
+            <div class="info" id="all-info">还没有记录</div>
+            <button class="small-btn blue" id="add-all">手动添加</button>
+        </div>
+        <div id="all-list"></div>
+    </section>
+</div>
+
+<button id="install-btn" class="install-btn hidden">安装到桌面</button>
+
+<div class="modal hidden" id="modal">
+    <div class="modal-box">
+        <h2 id="modal-title">手动添加记录</h2>
+        <label class="field">
+            <span>日期</span>
+            <input type="date" id="field-date">
+        </label>
+        <label class="field">
+            <span>入场时间</span>
+            <input type="time" id="field-enter" step="1">
+        </label>
+        <label class="field">
+            <span>出场时间（可留空）</span>
+            <input type="time" id="field-exit" step="1">
+        </label>
+        <p class="hint">
+            手动添加时必须填写出场时间；修改时出场留空，表示这次计时未结束、时长暂不统计。
+        </p>
+        <div class="modal-actions">
+            <button class="btn gray" id="modal-cancel">取消</button>
+            <button class="btn green" id="modal-save">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    var STORAGE_KEY = "library_timer_records_v1";
+    var WEEKDAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+
+    var records = [];
+    var activeId = null;
+    var lastResult = null;
+    var tickHandle = null;
+    var editingId = null;
+    var storageBroken = false;
+    var selectedWeekStart = weekStart(todayStr());
+    var selectedYear = new Date().getFullYear();
+    var deferredInstallPrompt = null;
+
+    function $(id) {
+        return document.getElementById(id);
+    }
+
+    function pad(n) {
+        return n < 10 ? "0" + n : String(n);
+    }
+
+    function formatDate(d) {
+        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    }
+
+    function formatTime(d) {
+        return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+    }
+
+    function normTime(t) {
+        t = String(t || "").trim();
+        if (/^\d{2}:\d{2}$/.test(t)) {
+            return t + ":00";
+        }
+        return t;
+    }
+
+    function todayStr() {
+        return formatDate(new Date());
+    }
+
+    function weekdayName(dateStr) {
+        var d = new Date(dateStr + "T00:00:00");
+        return WEEKDAYS[(d.getDay() + 6) % 7];
+    }
+
+    function addDays(dateStr, days) {
+        var d = new Date(dateStr + "T00:00:00");
+        d.setDate(d.getDate() + days);
+        return formatDate(d);
+    }
+
+    function weekStart(dateStr) {
+        var d = new Date(dateStr + "T00:00:00");
+        return addDays(dateStr, -((d.getDay() + 6) % 7));
+    }
+
+    function parseDateTime(dateStr, timeStr) {
+        dateStr = String(dateStr || "").trim();
+        var t = normTime(timeStr);
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            throw new Error("日期格式不对，请用 YYYY-MM-DD。");
+        }
+        if (!/^\d{2}:\d{2}:\d{2}$/.test(t)) {
+            throw new Error("时间格式不对，请用 HH:MM 或 HH:MM:SS。");
+        }
+
+        var d = new Date(dateStr + "T" + t);
+        if (isNaN(d.getTime()) || formatDate(d) !== dateStr) {
+            throw new Error("日期或时间不存在，请检查。");
+        }
+        return d;
+    }
+
+    function calcMinutes(start, end) {
+        var seconds = (end.getTime() - start.getTime()) / 1000;
+        if (seconds < 0) {
+            return 0;
+        }
+        var minutes = Math.floor(seconds / 60 + 0.5);
+        if (seconds > 0 && minutes === 0) {
+            minutes = 1;
+        }
+        return minutes;
+    }
+
+    function minutesText(minutes) {
+        if (minutes === null || minutes === undefined) {
+            return "未结束";
+        }
+        minutes = Number(minutes);
+        if (minutes < 60) {
+            return minutes + "分钟";
+        }
+        var h = Math.floor(minutes / 60);
+        var m = minutes % 60;
+        return m === 0 ? h + "小时" : h + "小时" + m + "分钟";
+    }
+
+    function clockText(seconds) {
+        seconds = Math.max(0, Math.floor(seconds));
+        var h = Math.floor(seconds / 3600);
+        var m = Math.floor((seconds % 3600) / 60);
+        var s = seconds % 60;
+        return pad(h) + ":" + pad(m) + ":" + pad(s);
+    }
+
+    function nextId() {
+        var max = 0;
+        records.forEach(function (r) {
+            max = Math.max(max, Number(r.id) || 0);
+        });
+        return max + 1;
+    }
+
+    function loadRecords() {
+        try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            var parsed = raw ? JSON.parse(raw) : [];
+            if (!Array.isArray(parsed)) {
+                return [];
+            }
+            return parsed.filter(function (r) {
+                return r && r.date && r.enter;
+            });
+        } catch (e) {
+            storageBroken = true;
+            return [];
+        }
+    }
+
+    function persist() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        } catch (e) {
+            storageBroken = true;
+            $("storage-warning").classList.remove("hidden");
+        }
+    }
+
+    function recordHtml(r, withActions) {
+        var unknown = r.minutes === null || r.minutes === undefined;
+        var actions = "";
+        if (withActions) {
+            actions =
+                '<div class="record-actions">' +
+                '<button class="link-btn" data-action="edit" data-id="' + r.id + '">修改</button>' +
+                '<button class="link-btn danger" data-action="delete" data-id="' + r.id + '">删除</button>' +
+                '</div>';
+        }
+        return (
+            '<div class="record ' + (unknown ? "unknown" : "") + '">' +
+            '<div class="record-main">' +
+            '<div class="time">' + r.enter + " → " + (r.exit || "未知") + '</div>' +
+            '<div class="duration">' + minutesText(r.minutes) + '</div>' +
+            '</div>' +
+            actions +
+            '</div>'
+        );
+    }
+
+    function emptyHtml(text) {
+        return '<div class="empty">' + text + '</div>';
+    }
+
+    function renderTimer() {
+        var record = null;
+        if (activeId !== null) {
+            record = records.find(function (r) { return r.id === activeId; });
+            if (!record) {
+                activeId = null;
+                stopTicking();
+            }
+        }
+
+        var running = activeId !== null;
+        $("start-btn").disabled = running;
+        $("stop-btn").disabled = !running;
+
+        if (running) {
+            updateTimerText();
+            return;
+        }
+
+        if (lastResult) {
+            $("timer-status").textContent =
+                "已结束  本次 " + minutesText(lastResult.minutes);
+            $("timer-detail").textContent =
+                "入场 " + lastResult.enter + "    出场 " + lastResult.exit;
+        } else {
+            $("timer-status").textContent = "未开始";
+            $("timer-detail").textContent = "点击开始，记录入场时间";
+        }
+    }
+
+    function updateTimerText() {
+        if (activeId === null) {
+            return;
+        }
+        var record = records.find(function (r) { return r.id === activeId; });
+        if (!record) {
+            return;
+        }
+        var start;
+        try {
+            start = parseDateTime(record.date, record.enter);
+        } catch (e) {
+            return;
+        }
+        var seconds = (Date.now() - start.getTime()) / 1000;
+        $("timer-status").textContent = "计时中  " + clockText(seconds);
+        $("timer-detail").textContent = "入场时间 " + record.enter;
+    }
+
+    function startTicking() {
+        stopTicking();
+        tickHandle = setInterval(updateTimerText, 1000);
+    }
+
+    function stopTicking() {
+        if (tickHandle !== null) {
+            clearInterval(tickHandle);
+            tickHandle = null;
+        }
+    }
+
+    function startTimer() {
+        if (activeId !== null) {
+            return;
+        }
+        var now = new Date();
+        var record = {
+            id: nextId(),
+            date: formatDate(now),
+            enter: formatTime(now),
+            exit: null,
+            minutes: null
+        };
+        records.push(record);
+        persist();
+        activeId = record.id;
+        lastResult = null;
+        renderAllViews();
+        startTicking();
+    }
+
+    function stopTimer() {
+        if (activeId === null) {
+            return;
+        }
+        var record = records.find(function (r) { return r.id === activeId; });
+        if (!record) {
+            activeId = null;
+            stopTicking();
+            renderAllViews();
+            return;
+        }
+
+        var end = new Date();
+        var start;
+        try {
+            start = parseDateTime(record.date, record.enter);
+        } catch (e) {
+            start = end;
+        }
+        record.exit = formatTime(end);
+        record.minutes = calcMinutes(start, end);
+        persist();
+
+        lastResult = {
+            enter: record.enter,
+            exit: record.exit,
+            minutes: record.minutes
+        };
+        activeId = null;
+        stopTicking();
+        renderAllViews();
+    }
+
+    function renderToday() {
+        var date = todayStr();
+        var list = records.filter(function (r) {
+            return r.date === date;
+        }).sort(function (a, b) {
+            return a.enter.localeCompare(b.enter);
+        });
+
+        var total = 0;
+        var invalid = 0;
+        list.forEach(function (r) {
+            if (r.minutes === null || r.minutes === undefined) {
+                invalid += 1;
+            } else {
+                total += Number(r.minutes);
+            }
+        });
+
+        $("today-total").textContent = minutesText(total);
+        $("today-count").textContent = "今日记录 " + list.length + " 次";
+
+        if (list.length === 0) {
+            $("today-info").textContent = "今天还没有记录";
+            $("today-list").innerHTML = emptyHtml("今天还没有记录，可以点“手动添加”");
+        } else {
+            $("today-info").textContent =
+                "今天共 " + list.length + " 条记录" +
+                (invalid ? "，其中 " + invalid + " 条未结束" : "");
+            $("today-list").innerHTML = list.map(function (r) {
+                return recordHtml(r, true);
+            }).join("");
+        }
+    }
+
+    function summarizeWeek(start) {
+        var end = addDays(start, 6);
+        var list = records.filter(function (r) {
+            return r.date >= start && r.date <= end;
+        });
+
+        var total = 0;
+        var invalid = 0;
+        list.forEach(function (r) {
+            if (r.minutes === null || r.minutes === undefined) {
+                invalid += 1;
+            } else {
+                total += Number(r.minutes);
+            }
+        });
+
+        var currentStart = weekStart(todayStr());
+        var isCurrent = start === currentStart;
+        var isFuture = start > currentStart;
+
+        // 本周按“今天周几”做除数（周一=1，周日=7）；
+        // 过去的完整周按 7 天算。
+        var divisor = 7;
+        if (isCurrent) {
+            divisor = ((new Date().getDay() + 6) % 7) + 1;
+        } else if (isFuture) {
+            divisor = 0;
+        }
+
+        return {
+            start: start,
+            end: end,
+            list: list,
+            total: total,
+            invalid: invalid,
+            divisor: divisor,
+            average: divisor ? Math.round(total / divisor) : 0,
+            isCurrent: isCurrent
+        };
+    }
+
+    function renderWeek() {
+        var summary = summarizeWeek(selectedWeekStart);
+        var currentStart = weekStart(todayStr());
+
+        $("week-range").textContent = summary.start + " 至 " + summary.end;
+        $("week-total").textContent = minutesText(summary.total);
+        $("week-avg").textContent = minutesText(summary.average);
+        $("week-next").disabled = selectedWeekStart >= currentStart;
+
+        var note;
+        if (summary.isCurrent) {
+            note = "平均每日 = 周总时长 ÷ 今天" +
+                weekdayName(todayStr()) + "（" + summary.divisor + " 天）";
+        } else {
+            note = "平均每日 = 周总时长 ÷ 7 天";
+        }
+        if (summary.invalid) {
+            note += "；未结束记录不计入总时长";
+        }
+        $("week-note").textContent = note;
+
+        var dayHtml = "";
+        for (var i = 0; i < 7; i += 1) {
+            var date = addDays(summary.start, i);
+            var dayTotal = 0;
+            summary.list.forEach(function (r) {
+                if (r.date === date && r.minutes !== null && r.minutes !== undefined) {
+                    dayTotal += Number(r.minutes);
+                }
+            });
+            dayHtml +=
+                '<div class="day-row ' + (date === todayStr() ? "today" : "") + '">' +
+                '<span>' + weekdayName(date) + ' <span class="muted">' + date + "</span></span>" +
+                "<span>" + minutesText(dayTotal) + "</span>" +
+                "</div>";
+        }
+        $("week-days").innerHTML = dayHtml;
+
+        var prefix = summary.isCurrent ? "本周" : "该周";
+        $("week-records-title").textContent =
+            prefix + "全部记录" +
+            (summary.invalid
+                ? "（" + summary.invalid + " 条未结束，未计入总时长）"
+                : "");
+
+        if (summary.list.length === 0) {
+            $("week-records").innerHTML = emptyHtml(prefix + "还没有记录");
+        } else {
+            summary.list.sort(function (a, b) {
+                return (a.date + a.enter).localeCompare(b.date + b.enter);
+            });
+            $("week-records").innerHTML = summary.list.map(function (r) {
+                return recordHtml(r, false);
+            }).join("");
+        }
+    }
+
+    function renderMonth() {
+        var now = new Date();
+        var currentYear = now.getFullYear();
+        var currentMonth = now.getMonth();
+
+        $("year-label").textContent = selectedYear + " 年";
+        $("year-next").disabled = selectedYear >= currentYear;
+
+        var html = "";
+        for (var month = 0; month < 12; month += 1) {
+            var prefix = selectedYear + "-" + pad(month + 1);
+            var list = records.filter(function (r) {
+                return r.date.slice(0, 7) === prefix;
+            });
+
+            var total = 0;
+            list.forEach(function (r) {
+                if (r.minutes !== null && r.minutes !== undefined) {
+                    total += Number(r.minutes);
+                }
+            });
+
+            var isCurrent = selectedYear === currentYear && month === currentMonth;
+            var isFuture = selectedYear > currentYear ||
+                (selectedYear === currentYear && month > currentMonth);
+
+            // 过去月份 ÷ 当月总天数；本月 ÷ 已过天数。
+            var divisor = 0;
+            if (!isFuture) {
+                divisor = isCurrent
+                    ? now.getDate()
+                    : new Date(selectedYear, month + 1, 0).getDate();
+            }
+            var average = divisor ? Math.round(total / divisor) : 0;
+
+            html +=
+                '<div class="month-row ' +
+                (isCurrent ? "current " : "") +
+                (isFuture ? "future" : "") + '">' +
+                '<span class="month-name">' + (month + 1) + "月</span>" +
+                '<span class="month-total">' +
+                (isFuture ? "—" : minutesText(total)) +
+                "</span>" +
+                '<span class="month-avg">' +
+                (isFuture ? "—" : minutesText(average)) +
+                "</span>" +
+                "</div>";
+        }
+
+        $("month-list").innerHTML = html;
+    }
+
+    function renderAllRecords() {
+        var list = records.slice().sort(function (a, b) {
+            return (b.date + b.enter).localeCompare(a.date + a.enter);
+        });
+        var invalid = 0;
+        list.forEach(function (r) {
+            if (r.minutes === null || r.minutes === undefined) {
+                invalid += 1;
+            }
+        });
+
+        $("all-info").textContent = list.length
+            ? "共 " + list.length + " 条记录" +
+              (invalid ? "，其中 " + invalid + " 条未结束" : "")
+            : "还没有记录";
+
+        $("all-list").innerHTML = list.length
+            ? list.map(function (r) { return recordHtml(r, true); }).join("")
+            : emptyHtml("还没有记录，可以点“手动添加”");
+    }
+
+    function updateHeader() {
+        $("header-date").textContent = todayStr() + "  " + weekdayName(todayStr());
+    }
+
+    function renderAllViews() {
+        updateHeader();
+        renderTimer();
+        renderToday();
+        renderWeek();
+        renderMonth();
+        renderAllRecords();
+    }
+
+    function openModal(id) {
+        editingId = id || null;
+        var record = null;
+        if (editingId !== null) {
+            record = records.find(function (r) { return r.id === editingId; });
+            if (!record) {
+                return;
+            }
+        }
+
+        $("modal-title").textContent = record ? "修改记录" : "手动添加记录";
+        $("field-date").value = record ? record.date : todayStr();
+        $("field-enter").value = record ? record.enter : formatTime(new Date());
+        $("field-exit").value = record && record.exit ? record.exit : "";
+        $("modal").classList.remove("hidden");
+        setTimeout(function () {
+            $("field-date").focus();
+        }, 50);
+    }
+
+    function closeModal() {
+        $("modal").classList.add("hidden");
+        editingId = null;
+    }
+
+    function saveModal() {
+        var date = $("field-date").value.trim();
+        var enterRaw = $("field-enter").value.trim();
+        var exitRaw = $("field-exit").value.trim();
+
+        if (!date || !enterRaw) {
+            alert("请填写日期和入场时间。");
+            return;
+        }
+
+        var enterDt;
+        var exitDt = null;
+        try {
+            enterDt = parseDateTime(date, enterRaw);
+            if (exitRaw) {
+                exitDt = parseDateTime(date, exitRaw);
+            }
+        } catch (e) {
+            alert(e.message);
+            return;
+        }
+
+        if (exitDt && exitDt.getTime() < enterDt.getTime()) {
+            alert("结束时间不能早于开始时间。");
+            return;
+        }
+        if (editingId === null && !exitDt) {
+            alert("手动添加记录时，出场时间不能为空。");
+            return;
+        }
+
+        var enter = normTime(enterRaw);
+        var exit = exitDt ? normTime(exitRaw) : null;
+        var minutes = exitDt ? calcMinutes(enterDt, exitDt) : null;
+
+        if (editingId !== null) {
+            var record = records.find(function (r) { return r.id === editingId; });
+            if (!record) {
+                closeModal();
+                renderAllViews();
+                return;
+            }
+            record.date = date;
+            record.enter = enter;
+            record.exit = exit;
+            record.minutes = minutes;
+        } else {
+            records.push({
+                id: nextId(),
+                date: date,
+                enter: enter,
+                exit: exit,
+                minutes: minutes
+            });
+        }
+
+        persist();
+        closeModal();
+        renderAllViews();
+    }
+
+    function editRecord(id) {
+        if (id === activeId) {
+            alert("这条记录正在计时，请先结束计时。");
+            return;
+        }
+        openModal(id);
+    }
+
+    function deleteRecord(id) {
+        if (id === activeId) {
+            alert("这条记录正在计时，请先结束计时。");
+            return;
+        }
+        var record = records.find(function (r) { return r.id === id; });
+        if (!record) {
+            return;
+        }
+        var text = record.date + "  " + record.enter + " 至 " + (record.exit || "未知");
+        if (!confirm("确定删除这条记录吗？\n\n" + text)) {
+            return;
+        }
+        records = records.filter(function (r) { return r.id !== id; });
+        persist();
+        renderAllViews();
+    }
+
+    function switchTab(name) {
+        document.querySelectorAll(".tab").forEach(function (tab) {
+            tab.classList.toggle("active", tab.getAttribute("data-tab") === name);
+        });
+        ["today", "week", "month", "all"].forEach(function (key) {
+            $("panel-" + key).classList.toggle("hidden", key !== name);
+        });
+        renderAllViews();
+    }
+
+    document.addEventListener("click", function (event) {
+        var target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        var tab = target.closest(".tab");
+        if (tab) {
+            switchTab(tab.getAttribute("data-tab"));
+            return;
+        }
+
+        var action = target.closest("[data-action]");
+        if (action) {
+            var id = Number(action.getAttribute("data-id"));
+            if (action.getAttribute("data-action") === "edit") {
+                editRecord(id);
+            } else if (action.getAttribute("data-action") === "delete") {
+                deleteRecord(id);
+            }
+        }
+    });
+
+    $("start-btn").addEventListener("click", startTimer);
+    $("stop-btn").addEventListener("click", stopTimer);
+    $("add-today").addEventListener("click", function () { openModal(null); });
+    $("add-all").addEventListener("click", function () { openModal(null); });
+    $("modal-cancel").addEventListener("click", closeModal);
+    $("modal-save").addEventListener("click", saveModal);
+
+    $("week-prev").addEventListener("click", function () {
+        selectedWeekStart = addDays(selectedWeekStart, -7);
+        renderWeek();
+    });
+    $("week-next").addEventListener("click", function () {
+        var currentStart = weekStart(todayStr());
+        if (selectedWeekStart >= currentStart) {
+            return;
+        }
+        selectedWeekStart = addDays(selectedWeekStart, 7);
+        if (selectedWeekStart > currentStart) {
+            selectedWeekStart = currentStart;
+        }
+        renderWeek();
+    });
+    $("year-prev").addEventListener("click", function () {
+        selectedYear -= 1;
+        renderMonth();
+    });
+    $("year-next").addEventListener("click", function () {
+        if (selectedYear < new Date().getFullYear()) {
+            selectedYear += 1;
+            renderMonth();
+        }
+    });
+
+    var installBtn = $("install-btn");
+    window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        installBtn.classList.remove("hidden");
+    });
+    installBtn.addEventListener("click", function () {
+        if (!deferredInstallPrompt) {
+            return;
+        }
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(function () {
+            deferredInstallPrompt = null;
+            installBtn.classList.add("hidden");
+        });
+    });
+    window.addEventListener("appinstalled", function () {
+        installBtn.classList.add("hidden");
+    });
+
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("./sw.js").catch(function () {});
+        });
+    }
+
+    $("modal").addEventListener("click", function (event) {
+        if (event.target === $("modal")) {
+            closeModal();
+        }
+    });
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !$("modal").classList.contains("hidden")) {
+            closeModal();
+        }
+    });
+
+    records = loadRecords();
+    if (storageBroken) {
+        $("storage-warning").classList.remove("hidden");
+    }
+    renderAllViews();
+})();
+</script>
+</body>
+</html>
